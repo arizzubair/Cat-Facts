@@ -2,6 +2,7 @@ import praw
 import random
 import threading
 import time
+from configparser import ConfigParser
 
 
 def get_cat_facts(cat_file="cat_facts.txt"):
@@ -23,7 +24,6 @@ def login(username, password, bot_identity_string):
     """Logs the bot into reddit using the username/password"""
     user_agent = praw.Reddit(bot_identity_string)
     user_agent.login(username, password)
-    print("Authenticated", username)
     return user_agent
 
 def get_new_posts(bot, subreddit_name, limit=10):
@@ -79,24 +79,36 @@ def send_cat_facts_to_all(bot, cat_lovers, cat_facts_file="cat_facts.txt",
     print("Sent random cat facts to cat lovers!")
 
 if __name__ == "__main__":
-    username, password, identification = get_login_details("login.txt")
+    config_parser = ConfigParser()
+    config_parser.read("cat_facts.cfg")
+
+    username = config_parser.get("Login", "username")
+    password = config_parser.get("Login", "password")
+    identification = config_parser.get("Login", "identification")
     bot = login(username, password, identification)
+    print("Authenticated:", username)
     cat_lovers = get_cat_lovers()
     print("Retrieved saved cat lovers list")
-
-    fact_pm_thread = threading.Timer(interval=60*60, # One hour
+    
+    interval = config_parser.getint("General", "fact_interval")
+    fact_pm_thread = threading.Timer(interval=interval,
                                      function=send_cat_facts_to_all,
                                      args=(bot, cat_lovers))
     fact_pm_thread.start()
-    subreddit = "redditbots"
+    
+    subreddits = config_parser.get("General", "subreddits").split()
+    post_limit = config_parser.getint("General", "new_post_limit")
+    wait_peroid = config_parser.getint("General", "wait_period")
+     
     while True:
-        print("Listening to the subreddit:", subreddit)
-        for post in get_new_posts(bot, "all", limit=30):
-            for comment in post.comments:
-                if wants_a_cat_fact(comment):
-                   user = comment.author
-                   print("Found a cat lover:", user.name)
-                   add_to_cat_lovers_list(user.name, cat_lovers)
-                   save_cat_lovers(cat_lovers)
+        print("Listening to the subreddits:", subreddits)
+        for subreddit in subreddits:
+          for post in get_new_posts(bot, subreddit, limit=post_limit):
+              for comment in post.comments:
+                  if wants_a_cat_fact(comment):
+                      user = comment.author
+                      print("Found a cat lover:", user.name)
+                      add_to_cat_lovers_list(user.name, cat_lovers)
+                      save_cat_lovers(cat_lovers)
  
-        time.sleep(30) # Check every 30 seconds            
+        time.sleep(wait_period) # Check every 30 seconds            
