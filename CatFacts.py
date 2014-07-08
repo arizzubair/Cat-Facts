@@ -8,7 +8,7 @@ import sys
 
 
 def get_cat_facts(cat_file="cat_facts.txt"):
-    """Returns a list of facts about cats from the cat file (one fact 
+    """Returns a list of facts about cats from the cat file (one fact
     per line)"""
     with open(cat_file, "r") as cat_file:
         return [line for line in cat_file]
@@ -91,17 +91,16 @@ if __name__ == "__main__":
     print("Authenticated:", username)
     cat_lovers = get_cat_lovers()
     print("Retrieved saved cat lovers list")
-    
+
     interval = config_parser.getint("General", "fact_interval")
     fact_pm_thread = threading.Timer(interval=interval,
                                      function=send_cat_facts_to_all,
                                      args=(bot, cat_lovers))
     fact_pm_thread.start()
-    
+
     subreddits = config_parser.get("General", "subreddits").split()
     post_limit = config_parser.getint("General", "new_post_limit")
-    wait_peroid = config_parser.getint("General", "wait_period")
-
+    wait_period = config_parser.getint("General", "wait_period")
 
     def clean_up(signal, frame):
         """Cleans up the bot when the user presses ctrl-c"""
@@ -113,12 +112,11 @@ if __name__ == "__main__":
     while True:
         print("Listening to the subreddits:", subreddits)
         for subreddit in subreddits:
-          for post in get_new_posts(bot, subreddit, limit=post_limit):
-              for comment in post.comments:
-                  if wants_a_cat_fact(comment):
-                      user = comment.author
-                      print("Found a cat lover:", user.name)
-                      add_to_cat_lovers_list(user.name, cat_lovers)
-                      save_cat_lovers(cat_lovers)
- 
-        time.sleep(wait_period) # Check every 30 seconds            
+            for post in get_new_posts(bot, subreddit, limit=post_limit):
+                for comment in post.comments:
+                    if wants_a_cat_fact(comment):
+                        user = comment.author
+                        print("Found a cat lover:", user.name)
+                        add_to_cat_lovers_list(user.name, cat_lovers)
+                        save_cat_lovers(cat_lovers)
+        time.sleep(wait_period) # Check every 30 seconds
