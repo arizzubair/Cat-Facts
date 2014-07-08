@@ -3,6 +3,8 @@ import random
 import threading
 import time
 from configparser import ConfigParser
+import signal
+import sys
 
 
 def get_cat_facts(cat_file="cat_facts.txt"):
@@ -99,7 +101,15 @@ if __name__ == "__main__":
     subreddits = config_parser.get("General", "subreddits").split()
     post_limit = config_parser.getint("General", "new_post_limit")
     wait_peroid = config_parser.getint("General", "wait_period")
-     
+
+
+    def clean_up(signal, frame):
+        """Cleans up the bot when the user presses ctrl-c"""
+        bot.clear_authentication()
+        fact_pm_thread.cancel()
+        sys.exit(0)
+    signal.signal(signal.SIGINT, clean_up)
+
     while True:
         print("Listening to the subreddits:", subreddits)
         for subreddit in subreddits:
